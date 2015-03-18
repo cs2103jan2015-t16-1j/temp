@@ -23,11 +23,14 @@ import javax.swing.JTextField;
 import javax.swing.Spring;
 import javax.swing.SpringLayout;
 import javax.swing.border.LineBorder;
+import java.util.logging.Logger;
 
 public class QLGUI extends JFrame{
     private static final String TITLE = "Quicklyst";
     private static final int WINDOW_WIDTH = 800;
     private static final int WINDOW_HEIGHT = 600;
+    
+    private final static Logger LOGGER = Logger.getLogger(QLGUI.class.getName()); 
     
     private JPanel _taskList;
     private JLabel _overview;
@@ -36,6 +39,9 @@ public class QLGUI extends JFrame{
     
     public QLGUI() {
         super(TITLE);
+        
+        LOGGER.info("creating GUI");
+        
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         Container contentPane = this.getContentPane();
@@ -43,11 +49,13 @@ public class QLGUI extends JFrame{
         
         contentPane.setLayout(layout);
         
+        LOGGER.info("creating tasklist");
         _taskList = new JPanel(new GridBagLayout());
         JPanel taskListBorderPane = new JPanel(new BorderLayout());
         taskListBorderPane.add(_taskList, BorderLayout.NORTH);
         JScrollPane taskListScroll = new JScrollPane(taskListBorderPane);
         
+        LOGGER.info("creating overview panel");
         JPanel overviewPane = new JPanel(new BorderLayout());
         overviewPane.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK));
         
@@ -55,6 +63,7 @@ public class QLGUI extends JFrame{
         _overview.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
         overviewPane.add(_overview, BorderLayout.NORTH);
         
+        LOGGER.info("creating feedback");
         _feedback = new JTextArea();
         _feedback.setEditable(false);
         _feedback.setLineWrap(true);
@@ -64,12 +73,17 @@ public class QLGUI extends JFrame{
         feedbackBorderPane.add(_feedback, BorderLayout.SOUTH);
         JScrollPane feedbackScroll = new JScrollPane(feedbackBorderPane);        
        
+        LOGGER.info("creating command text field");
         _command = new JTextField();
+        LOGGER.info("adding actionListener to command text field");
         _command.addActionListener(new ActionListener(){
 
             public void actionPerformed(ActionEvent e){
+                LOGGER.info(String.format("user entered: %s", _command.getText()));
                 StringBuilder fb = new StringBuilder();
                 List<Task> tasks = QLLogic.executeCommand(_command.getText(), fb);
+                assert tasks != null;
+                
                 if (!fb.toString().isEmpty()) {
                     _feedback.append(fb.toString() + "\r\n");
                 }
@@ -79,56 +93,28 @@ public class QLGUI extends JFrame{
           }
         );
         
+        LOGGER.info("adding components to main panel");
         add(_command);
         add(taskListScroll);
         add(feedbackScroll);
         add(overviewPane);
         
+        LOGGER.info("set constraints for components");
         setConstraintsForMainFrame(layout, contentPane, taskListScroll,
                                    overviewPane, feedbackScroll, _command);
         
+        LOGGER.info("finalizing GUI");
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         setVisible(true);
- 
-        updateUIWithTaskList(QLLogic.setup("save.json"));
+        
+        LOGGER.info("get taskList from QLLogic");
+        List<Task> t = QLLogic.setup("save.json");
+        assert t != null;
+        updateUIWithTaskList(t);
+        
     }
-    private void setConstraintsForMainFrame(SpringLayout layout,
-            Container contentPane, JComponent taskListScroll,
-            JComponent overviewPane, JComponent feedbackScroll,
-            JComponent commandTextField) {
-        layout.putConstraint(SpringLayout.WEST, commandTextField, 10,
-                             SpringLayout.WEST, contentPane);
-        layout.putConstraint(SpringLayout.EAST, commandTextField, -10,
-                             SpringLayout.EAST, contentPane); 
-        layout.putConstraint(SpringLayout.SOUTH, commandTextField, -10,
-                             SpringLayout.SOUTH, contentPane);
-        
-        layout.putConstraint(SpringLayout.WEST, taskListScroll, 10,
-                             SpringLayout.WEST, contentPane);
-        layout.putConstraint(SpringLayout.NORTH, taskListScroll, 10,
-                             SpringLayout.NORTH, contentPane);
-        layout.putConstraint(SpringLayout.SOUTH, taskListScroll, -10, 
-                             SpringLayout.NORTH, commandTextField);
-        layout.getConstraints(taskListScroll).setWidth(Spring.constant(385));
-        
-        layout.putConstraint(SpringLayout.WEST, overviewPane, 10,
-                             SpringLayout.EAST, taskListScroll);
-        layout.putConstraint(SpringLayout.NORTH, overviewPane, 10,
-                             SpringLayout.NORTH, contentPane);
-        layout.putConstraint(SpringLayout.EAST, overviewPane, -10,
-                             SpringLayout.EAST, contentPane);
-        layout.getConstraints(overviewPane).setHeight(Spring.constant(220));
-        
-        layout.putConstraint(SpringLayout.WEST, feedbackScroll, 10,
-                             SpringLayout.EAST, taskListScroll);
-        layout.putConstraint(SpringLayout.NORTH, feedbackScroll, 10,
-                             SpringLayout.SOUTH, overviewPane);
-        layout.putConstraint(SpringLayout.SOUTH, feedbackScroll, 0,
-                             SpringLayout.SOUTH, taskListScroll);
-        layout.putConstraint(SpringLayout.EAST, feedbackScroll, -10,
-                             SpringLayout.EAST, contentPane);
-    }
-    private void updateUIWithTaskList(List<Task> tasks) {
+    
+     private void updateUIWithTaskList(List<Task> tasks) {
         _taskList.removeAll();
         int i = 1;
         for (Task task : tasks)
@@ -268,9 +254,50 @@ public class QLGUI extends JFrame{
                                         "%d completed</html>",
                                         dueToday, dueTomorrow, overdue, completed));
     }
-    
+
+     private void setConstraintsForMainFrame(SpringLayout layout,
+                                             Container contentPane,
+                                             JComponent taskListScroll,
+                                             JComponent overviewPane,
+                                             JComponent feedbackScroll,
+                                             JComponent commandTextField) {
+
+        layout.putConstraint(SpringLayout.WEST, commandTextField, 10,
+        SpringLayout.WEST, contentPane);
+        layout.putConstraint(SpringLayout.EAST, commandTextField, -10,
+        SpringLayout.EAST, contentPane); 
+        layout.putConstraint(SpringLayout.SOUTH, commandTextField, -10,
+        SpringLayout.SOUTH, contentPane);
+        
+        layout.putConstraint(SpringLayout.WEST, taskListScroll, 10,
+        SpringLayout.WEST, contentPane);
+        layout.putConstraint(SpringLayout.NORTH, taskListScroll, 10,
+        SpringLayout.NORTH, contentPane);
+        layout.putConstraint(SpringLayout.SOUTH, taskListScroll, -10, 
+        SpringLayout.NORTH, commandTextField);
+        layout.getConstraints(taskListScroll).setWidth(Spring.constant(385));
+        
+        layout.putConstraint(SpringLayout.WEST, overviewPane, 10,
+        SpringLayout.EAST, taskListScroll);
+        layout.putConstraint(SpringLayout.NORTH, overviewPane, 10,
+        SpringLayout.NORTH, contentPane);
+        layout.putConstraint(SpringLayout.EAST, overviewPane, -10,
+        SpringLayout.EAST, contentPane);
+        layout.getConstraints(overviewPane).setHeight(Spring.constant(220));
+        
+        layout.putConstraint(SpringLayout.WEST, feedbackScroll, 10,
+        SpringLayout.EAST, taskListScroll);
+        layout.putConstraint(SpringLayout.NORTH, feedbackScroll, 10,
+        SpringLayout.SOUTH, overviewPane);
+        layout.putConstraint(SpringLayout.SOUTH, feedbackScroll, 0,
+        SpringLayout.SOUTH, taskListScroll);
+        layout.putConstraint(SpringLayout.EAST, feedbackScroll, -10,
+        SpringLayout.EAST, contentPane);
+}
+
+
     public static void main(String[] args) {
         QLGUI g = new QLGUI();
-    }
-   
+        
+    }   
 }
